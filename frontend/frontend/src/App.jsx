@@ -55,7 +55,7 @@ function App() {
       setResult("");
 
       const response = await fetch( 
-        "http://localhost:3000/run-automation",
+        "https://lift-site-status.vercel.app/run-automation",
         {
           method: "POST",
           headers: {
