@@ -1,0 +1,28 @@
+{
+  "name": "updes-lift-site-status",
+  "version": "1.0.0",
+  "description": "This repository contains an automation webpage which checks for the `Updesl Lift` site status.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/maviaarav/Updes-Lift-Site-Status.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/maviaarav/Updes-Lift-Site-Status/issues"
+  },
+  "homepage": "https://github.com/maviaarav/Updes-Lift-Site-Status#readme",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "playwright": "^1.60.0",
+    "sharp": "^0.34.5",
+    "tesseract.js": "^7.0.0"
+  }
+}
