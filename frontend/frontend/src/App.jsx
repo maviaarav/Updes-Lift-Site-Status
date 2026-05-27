@@ -12,6 +12,8 @@ function App() {
   const [ocrFailed, setOcrFailed] = useState(false);
   const [finalStageFailed, setFinalStageFailed] = useState(false);
 
+  const automationUrl = import.meta.env.VITE_RUN_AUTOMATION_URL || (import.meta.env.DEV ? "http://localhost:3000/run-automation" : "/api/run-automation");
+
   const dedupeRepeatedLines = (text) => {
     if (!text) return "";
     const lines = text.split(/\r?\n/);
@@ -54,8 +56,8 @@ function App() {
       setLoading(true);
       setResult("");
 
-      const response = await fetch( 
-        "https://lift-site-status.vercel.app/run-automation",
+      const response = await fetch(
+        automationUrl,
         {
           method: "POST",
           headers: {
