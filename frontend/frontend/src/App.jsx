@@ -77,12 +77,14 @@ function App() {
       const cleaned = dedupeRepeatedLines(resultText);
 
       setResult(cleaned);
-      setStatus(data.success ? "success" : "error");
 
       const final = (data.output || data.message || "").toString();
       const cleanedFinal = dedupeRepeatedLines(final);
+      const isSuccessful = data.success === true || /Website working correctly/i.test(cleanedFinal);
+
+      setStatus(isSuccessful ? "success" : "error");
       setFinalText(cleanedFinal);
-      const ok = cleanedFinal.includes("Website working correctly");
+      const ok = isSuccessful;
       // detect OCR / maximum retries / many false flags
       const badOcr = /Maximum retries reached/i.test(cleanedFinal) || (/login:\s*false/i.test(cleanedFinal) && /pageAppears:\s*false/i.test(cleanedFinal));
       const dashboardDidNotAppear = cleanedFinal.includes("Dashboard did not appear");

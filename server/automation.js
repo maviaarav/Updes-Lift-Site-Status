@@ -1,5 +1,13 @@
 const { chromium: playwrightChromium } = require("playwright");
 const Tesseract = require("tesseract.js");
+const sharp = require("sharp");
+
+const isVercel = Boolean(process.env.VERCEL);
+const maxLoginAttempts = isVercel ? 8 : 1000;
+const captchaWaitTimeout = isVercel ? 3000 : 5000;
+const postClickDelayMs = isVercel ? 500 : 1500;
+const dashboardTimeout = isVercel ? 6000 : 10000;
+const finalPageTimeout = isVercel ? 6000 : 10000;
 
 let serverlessChromium = null;
 
@@ -20,9 +28,46 @@ const getBrowserLaunchOptions = async () => {
         };
     }
 
+    const headlessMode = process.env.HEADLESS !== "false";
     return {
-        headless: true
+        headless: headlessMode,
+        args: headlessMode ? [] : ["--disable-gpu", "--disable-dev-shm-usage"]
     };
+};
+
+const buildStatusOutput = (status) => {
+    return [
+        `{`,
+        `  "login": ${status.login},`,
+        `  "pageAppears": ${status.pageAppears},`,
+        `  "buttonClicked": ${status.buttonClicked},`,
+        `  "finalStage": ${status.finalStage},`,
+        `  "output": "${status.output}"`,
+        `}`
+    ].join("\n");
+};
+
+const finalizeStatus = (status, success) => {
+    return {
+        ...status,
+        success,
+        output: buildStatusOutput(status)
+    };
+};
+
+const readCaptchaText = async (captchaImage) => {
+    const result = await Tesseract.recognize(
+        captchaImage,
+        "eng",
+        {
+            tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+        }
+    );
+
+    return result.data.text
+        .trim()
+        .replace(/\s/g, "")
+        .replace(/[^a-zA-Z0-9]/g, "");
 };
 
 const checkWebsite = async (
@@ -39,6 +84,7 @@ const checkWebsite = async (
         pageAppears: false,
         buttonClicked: false,
         finalStage: false,
+        success: false,
         output: ""
     };
 
@@ -69,7 +115,7 @@ const checkWebsite = async (
 
         for(
             let attempt = 1;
-            attempt <= 30;
+        attempt <= maxLoginAttempts;
             attempt++
         ){
 
@@ -95,7 +141,7 @@ const checkWebsite = async (
             await page.waitForSelector(
                 '//*[@id="loginform"]/div[5]',
                 {
-                    timeout:5000
+                    timeout: captchaWaitTimeout
                 }
             );
 
@@ -106,37 +152,12 @@ const checkWebsite = async (
                 )
                 .screenshot();
 
-            const result =
-                await Tesseract
-                .recognize(
-                    captchaImage,
-                    "eng"
-                );
-
             const captchaText =
-                result.data.text
-                .trim()
-                .replace(
-                    /\s/g,
-                    ""
-                )
-                .replace(
-                    /[^a-zA-Z0-9]/g,
-                    ""
-                );
+                await readCaptchaText(captchaImage);
 
 
             // skip bad OCR
-            if(
-                captchaText.length < 4
-            ){
-
-                console.log(
-                    "Bad OCR result"
-                );
-
-                continue;
-            }
+          
 
             await page
                 .locator(
@@ -161,7 +182,7 @@ const checkWebsite = async (
 
             await page
             .waitForTimeout(
-                1500
+                postClickDelayMs
             );
 
             const errorSpan =
@@ -222,7 +243,7 @@ const checkWebsite = async (
             status.output =
             "Maximum retries reached";
 
-            return status;
+            return finalizeStatus(status, false);
 
         }
 
@@ -235,7 +256,7 @@ const checkWebsite = async (
             .waitForSelector(
                 ".nano-content",
                 {
-                    timeout:10000
+                    timeout: dashboardTimeout
                 }
             );
 
@@ -252,7 +273,7 @@ const checkWebsite = async (
             status.output =
                 "Dashboard did not appear";
 
-            return status;
+            return finalizeStatus(status, false);
 
         }
 
@@ -286,7 +307,7 @@ const checkWebsite = async (
             status.output =
                 "Button click failed";
 
-            return status;
+            return finalizeStatus(status, false);
 
         }
 
@@ -299,7 +320,7 @@ const checkWebsite = async (
             .waitForSelector(
                 ".table-responsive",
                 {
-                    timeout:10000
+                    timeout: finalPageTimeout
                 }
             );
 
@@ -308,6 +329,8 @@ const checkWebsite = async (
 
             status.output =
                 "Website working correctly";
+
+            return finalizeStatus(status, true);
 
         }
         catch{
@@ -318,9 +341,9 @@ const checkWebsite = async (
             status.output =
                 "Login page is working but final page did not load";
 
-        }
+            return finalizeStatus(status, false);
 
-        return status;
+        }
 
     }
     catch(error){
@@ -328,7 +351,7 @@ const checkWebsite = async (
         status.output =
             error.message;
 
-        return status;
+        return finalizeStatus(status, false);
     }
     finally{
 
