@@ -10,6 +10,7 @@ function App() {
   const [celebrate, setCelebrate] = useState(false);
   const [celebrateKey, setCelebrateKey] = useState(0);
   const [ocrFailed, setOcrFailed] = useState(false);
+  const [dashboardFailed, setDashboardFailed] = useState(false);
   const [finalStageFailed, setFinalStageFailed] = useState(false);
 
   const automationUrl = import.meta.env.VITE_RUN_AUTOMATION_URL || (import.meta.env.DEV ? "http://localhost:3000/run-automation" : "/api/run-automation");
@@ -27,7 +28,7 @@ function App() {
       out.push(line);
     }
     // trim leading/trailing blank lines and return
-    return out.join('\n').replace(/^(\s*\n)+|(...\s*$)/g, '').trim();
+    return out.join('\n').trim();
   };
 
   const renderResultText = (text) =>
@@ -84,12 +85,14 @@ function App() {
       const ok = cleanedFinal.includes("Website working correctly");
       // detect OCR / maximum retries / many false flags
       const badOcr = /Maximum retries reached/i.test(cleanedFinal) || (/login:\s*false/i.test(cleanedFinal) && /pageAppears:\s*false/i.test(cleanedFinal));
+      const dashboardDidNotAppear = cleanedFinal.includes("Dashboard did not appear");
       const finalStageFail = cleanedFinal.includes("Login page is working but final page did not load");
 
       setOcrFailed(badOcr);
+      setDashboardFailed(dashboardDidNotAppear);
       setFinalStageFailed(finalStageFail);
-      setCelebrate(ok && !badOcr && !finalStageFail);
-      if (ok && !badOcr && !finalStageFail) setCelebrateKey((k) => k + 1);
+      setCelebrate(ok && !badOcr && !dashboardDidNotAppear && !finalStageFail);
+      if (ok && !badOcr && !dashboardDidNotAppear && !finalStageFail) setCelebrateKey((k) => k + 1);
     } catch (err) {
       console.log(err);
 
@@ -99,6 +102,7 @@ function App() {
       setFinalText(dedupeRepeatedLines(err.message || "Error"));
       setCelebrate(false);
       setOcrFailed(false);
+      setDashboardFailed(false);
       setFinalStageFailed(false);
     } finally {
       setLoading(false);
@@ -174,6 +178,12 @@ function App() {
               <div className="sad-final-emoji">😔</div>
               <div className="final-text">Login page is working but final page did not load</div>
               <div className="sad-animation" aria-hidden></div>
+            </div>
+          ) : dashboardFailed ? (
+            <div className="dashboard-failed">
+              <div className="dashboard-sad-emoji" aria-hidden>😢</div>
+              <div className="final-text">Dashboard did not appear</div>
+              <div className="dashboard-animation" aria-hidden></div>
             </div>
           ) : ocrFailed ? (
             <div className="ocr-failed">

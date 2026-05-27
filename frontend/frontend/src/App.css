@@ -402,6 +402,41 @@ animation: btn-pulse 1.8s ease-in-out infinite;
   100%{ transform: scaleX(0.98); opacity: 0.8 }
 }
 
+.dashboard-failed{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:10px;
+}
+
+.dashboard-sad-emoji{
+  font-size:48px;
+  animation: dashboard-wobble 1.4s ease-in-out infinite;
+}
+
+@keyframes dashboard-wobble{
+  0%{ transform: translateX(0) rotate(0deg) }
+  25%{ transform: translateX(-4px) rotate(-4deg) }
+  50%{ transform: translateX(0) rotate(0deg) }
+  75%{ transform: translateX(4px) rotate(4deg) }
+  100%{ transform: translateX(0) rotate(0deg) }
+}
+
+.dashboard-animation{
+  width: 90%;
+  height: 6px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, rgba(37,99,235,0.9), rgba(239,68,68,0.9), rgba(37,99,235,0.9));
+  box-shadow: 0 6px 24px rgba(0,0,0,0.08);
+  animation: dashboard-glow 1.6s ease-in-out infinite;
+}
+
+@keyframes dashboard-glow{
+  0%{ transform: scaleX(0.98); opacity: 0.75 }
+  50%{ transform: scaleX(1.03); opacity: 1 }
+  100%{ transform: scaleX(0.98); opacity: 0.75 }
+}
+
 .retry-btn[disabled]{
   opacity: 0.6;
   cursor: not-allowed;

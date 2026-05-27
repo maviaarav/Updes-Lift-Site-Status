@@ -1,5 +1,4 @@
-const { exec } = require("child_process");
-const path = require("path");
+const { checkWebsite } = require("../server/automation");
 
 module.exports = async (req, res) => {
   if (req.method !== "POST") {
@@ -10,31 +9,11 @@ module.exports = async (req, res) => {
     });
   }
 
-  const automationFile = path.join(__dirname, "..", "server", "automation.js");
+  const result = await checkWebsite(
+    "Public",
+    "9870692681",
+    "StrongPassword@234"
+  );
 
-  exec(`node "${automationFile}"`, (error, stdout, stderr) => {
-    console.log("stdout:", stdout);
-    console.log("stderr:", stderr);
-
-    if (error) {
-      console.log(error);
-
-      return res.status(500).json({
-        success: false,
-        message: error.message
-      });
-    }
-
-    if (stderr) {
-      return res.status(500).json({
-        success: false,
-        message: stderr
-      });
-    }
-
-    return res.status(200).json({
-      success: true,
-      output: stdout
-    });
-  });
+  return res.status(200).json(result);
 };

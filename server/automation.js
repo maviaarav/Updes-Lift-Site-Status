@@ -1,5 +1,29 @@
-const { chromium } = require("playwright");
+const { chromium: playwrightChromium } = require("playwright");
 const Tesseract = require("tesseract.js");
+
+let serverlessChromium = null;
+
+try {
+    serverlessChromium = require("@sparticuz/chromium");
+}
+catch {
+    serverlessChromium = null;
+}
+
+const getBrowserLaunchOptions = async () => {
+    if (process.env.VERCEL && serverlessChromium) {
+        return {
+            args: serverlessChromium.args,
+            defaultViewport: serverlessChromium.defaultViewport,
+            executablePath: await serverlessChromium.executablePath(),
+            headless: serverlessChromium.headless
+        };
+    }
+
+    return {
+        headless: true
+    };
+};
 
 const checkWebsite = async (
     type,
@@ -21,9 +45,9 @@ const checkWebsite = async (
     try {
 
         browser =
-            await chromium.launch({
-                headless: true
-            });
+            await playwrightChromium.launch(
+                await getBrowserLaunchOptions()
+            );
 
         page =
             await browser.newPage();
@@ -322,18 +346,6 @@ const checkWebsite = async (
 
 };
 
-
-(async()=>{
-
-    const result =
-        await checkWebsite(
-            "Public",
-            "9870692681",
-            "StrongPassword@234"
-        );
-
-    console.log(
-        result
-    );
-
-})();
+module.exports = {
+    checkWebsite
+};
